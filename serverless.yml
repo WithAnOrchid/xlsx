@@ -11,20 +11,12 @@
 #
 # Happy Coding!
 
-service: xlsx
-
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
+service: posts
 
 provider:
   name: aws
   runtime: python2.7
-
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
-
+  memorySize: 128
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
 #    - Effect: "Allow"
@@ -40,41 +32,36 @@ provider:
 #          - - "arn:aws:s3:::"
 #            - "Ref" : "ServerlessDeploymentBucket"
 
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
+# you can overwrite defaults here
+#defaults:
+#  stage: dev
+#  region: us-east-1
 
 # you can add packaging information here
 #package:
 #  include:
-#    - include-me.py
-#    - include-me-dir/**
+#    - include-me.js
 #  exclude:
-#    - exclude-me.py
-#    - exclude-me-dir/**
+#    - exclude-me.js
+#  artifact: my-service-code.zip
 
 functions:
-  hello:
-    handler: handler.hello
-
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - s3: ${env:BUCKET}
+  listPosts:
+    handler: handler.list_posts
+    events:
+      - http:
+          path: posts
+          method: get
+#      - s3: ${env.BUCKET}
 #      - schedule: rate(10 minutes)
 #      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
 
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
+  getPost:
+    handler: handler.get_post
+    events:
+      - http:
+          path: posts/{id}
+          method: get
 
 # you can add CloudFormation resource templates here
 #resources:
@@ -86,4 +73,4 @@ functions:
 #  Outputs:
 #     NewOutput:
 #       Description: "Description for the output"
-#       Value: "Some output value"
+#       Value: "Some output value

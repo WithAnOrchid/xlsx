@@ -1,22 +1,27 @@
-import json
+# get this file's directory independent of where it's run from
+import sys, os
 
-def hello(event, context):
-    body = {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "input": event
-    }
+here = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(here, "./vendored"))
 
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
+import requests
+import logging
 
-    return response
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
 
-    # Use this code if you don't use the http event with the LAMBDA-PROXY integration
-    """
-    return {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "event": event
-    }
-    """
+API_HOST = 'https://jsonplaceholder.typicode.com'
+
+
+def list_posts(event, context):
+    url = API_HOST + '/posts'
+
+    log.debug('calling ' + url)
+    return requests.get(url).json()
+
+
+def get_post(event, context):
+    url = API_HOST + '/posts/' + event['path']['id']
+
+    log.debug('calling ' + url)
+    return requests.get(url).json()
