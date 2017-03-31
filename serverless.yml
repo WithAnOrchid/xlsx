@@ -1,22 +1,11 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
-service: posts
+service: export
 
 provider:
   name: aws
   runtime: python2.7
-  memorySize: 128
+  region: us-east-1
+  stage: dev
+  memorySize: 1024
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
 #    - Effect: "Allow"
@@ -32,6 +21,15 @@ provider:
 #          - - "arn:aws:s3:::"
 #            - "Ref" : "ServerlessDeploymentBucket"
 
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:*
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource: "*"
+
 # you can overwrite defaults here
 #defaults:
 #  stage: dev
@@ -46,22 +44,38 @@ provider:
 #  artifact: my-service-code.zip
 
 functions:
-  listPosts:
-    handler: handler.list_posts
+  fetchData:
+    handler: handler.fetch_data
     events:
       - http:
-          path: posts
+          path: export
           method: get
+          cors: true
 #      - s3: ${env.BUCKET}
 #      - schedule: rate(10 minutes)
 #      - sns: greeter-topic
 
-  getPost:
-    handler: handler.get_post
-    events:
-      - http:
-          path: posts/{id}
-          method: get
+resources:
+  Resources:
+    xlsxBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: PublicReadWrite
+        BucketName: XLSX-BUCKET
+        LifecycleConfiguration:
+          Rules:
+        - ExpirationInDays: 1
+          Prefix: XLSX_
+          Status: Enabled
+        CorsRules:
+        - AllowedHeaders: ['*']
+          AllowedMethods: [GET]
+          AllowedOrigins: ['*']
+          ExposedHeaders: [Date]
+          Id: myCORSRuleId1
+          MaxAge: '3600'
+      DeletionPolicy: Delete
+
 
 # you can add CloudFormation resource templates here
 #resources:
