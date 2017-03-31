@@ -64,9 +64,9 @@ resources:
         BucketName: XLSX-BUCKET
         LifecycleConfiguration:
           Rules:
-        - ExpirationInDays: 1
-          Prefix: XLSX_
-          Status: Enabled
+          - ExpirationInDays: 1
+            Prefix: XLSX_
+            Status: Enabled
         CorsRules:
         - AllowedHeaders: ['*']
           AllowedMethods: [GET]
