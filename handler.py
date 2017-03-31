@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 from datetime import datetime
 from datetime import timedelta
 from __future__ import print_function
@@ -7,6 +7,7 @@ import xlsxwriter
 import boto3
 import json
 import time
+
 
 # Helper class to convert a DynamoDB item to JSON.
 class DecimalEncoder(json.JSONEncoder):
@@ -18,12 +19,13 @@ class DecimalEncoder(json.JSONEncoder):
                 return int(o)
         return super(DecimalEncoder, self).default(o)
 
+
 # Send query request to 'readings' table
 def request_data(sensor_id, start_timestamp, end_timestamp):
-	dynamodb = boto3.resource('dynamodb', region_name='us-east-1', endpoint_url="http://localhost:8000")
-	table = dynamodb.Table('readings')
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1', endpoint_url="http://localhost:8000")
+    table = dynamodb.Table('readings')
 
-	response = table.query(
+    response = table.query(
         TableName='readings',
         ConsistentRead=True,
         KeyConditionExpression='sensor_id = :sensor_id and published_at BETWEEN :start_timestamp AND :end_timestamp',
