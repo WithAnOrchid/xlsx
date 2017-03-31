@@ -61,7 +61,7 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         AccessControl: PublicReadWrite
-        BucketName: xlsx_bucket
+        BucketName: xlsx
         LifecycleConfiguration:
           Rules:
           - ExpirationInDays: 1
