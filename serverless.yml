@@ -6,6 +6,7 @@ provider:
   region: us-east-1
   stage: dev
   memorySize: 1024
+  timeout: 30
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
 #    - Effect: "Allow"

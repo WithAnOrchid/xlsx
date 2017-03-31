@@ -45,7 +45,7 @@ def request_data(sensor_id, start_timestamp, end_timestamp):
 
 
 def make_xlsx(event, context):
-    print(event)
+    print(json.dumps(event))
     response = request_data('TEMPERATURE_DHT11_1', 1490135972113, 1490137092113)
     print("Query succeeded:")
     print(json.dumps(response, indent=4, cls=DecimalEncoder))
