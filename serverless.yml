@@ -45,7 +45,7 @@ provider:
 
 functions:
   fetchData:
-    handler: handler.fetch_data
+    handler: handler.make_xlsx
     events:
       - http:
           path: export
