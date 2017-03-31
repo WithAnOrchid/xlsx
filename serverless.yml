@@ -67,13 +67,6 @@ resources:
           - ExpirationInDays: 1
             Prefix: XLSX_
             Status: Enabled
-        CorsRules:
-        - AllowedHeaders: ['*']
-          AllowedMethods: [GET]
-          AllowedOrigins: ['*']
-          ExposedHeaders: [Date]
-          Id: myCORSRuleId1
-          MaxAge: '3600'
       DeletionPolicy: Delete
 
 
