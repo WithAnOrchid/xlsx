@@ -1,4 +1,4 @@
-service: export
+service: xlsx-export
 
 provider:
   name: aws
