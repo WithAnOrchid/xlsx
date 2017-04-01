@@ -66,7 +66,7 @@ resources:
         LifecycleConfiguration:
           Rules:
           - ExpirationInDays: 1
-            Prefix: XLSX_
+            Prefix: 
             Status: Enabled
       DeletionPolicy: Delete
 
