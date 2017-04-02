@@ -67,7 +67,7 @@ resources:
           Rules:
           - ExpirationInDays: 1
             Status: Enabled
-      DeletionPolicy: Delete
+      DeletionPolicy: Retain
 
 
 # you can add CloudFormation resource templates here
