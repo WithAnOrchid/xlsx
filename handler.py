@@ -20,6 +20,14 @@ class DecimalEncoder(json.JSONEncoder):
                 return int(o)
         return super(DecimalEncoder, self).default(o)
 
+# Upload file to S3
+def upload_xlsx():
+    s3 = boto3.resource('s3')
+    response = s3.Object('xlsx-export', filename).put(Body=open(filepath, 'rb'), ACL='public-read')
+    if(response['ResponseMetadata']['HTTPStatusCode'] == 200):
+    	return 'https://s3.amazonaws.com/xlsx-export/' + filename
+    else:
+    	return ''
 
 # Send query request to 'readings' table
 def request_data(sensor_id, start_timestamp, end_timestamp):
@@ -57,7 +65,7 @@ def request_data(sensor_id, start_timestamp, end_timestamp):
     return items
 # End of request_data
 
-def write_summary(sheet, type, count, start, end):
+def write_summary(sheet, unit, count, start, end):
     # TODO
     # Write some simple text.
     # Widen the first column to make the text clearer.
@@ -85,7 +93,7 @@ def write_summary(sheet, type, count, start, end):
     sheet.write('A6', u'设备ID')
     sheet.write('B6', u'模块ID')
     sheet.write('C6', u'记录时间')
-    sheet.write('D6', type)
+    sheet.write('D6', unit)
     return
 
 def write_data(sheet, data):
@@ -114,12 +122,14 @@ def write_data(sheet, data):
         current_row = current_row + 1
     return
 
-def create_xlsx(items, start_timestamp, end_timestamp):
+def create_workbook():
     date_fmt = '%Y-%m-%d_%H-%M-%S'
     beijing_time = datetime.utcnow() + timedelta(hours=8)
 
     # Define filename and filepath
+    global filename
     filename = beijing_time.strftime(date_fmt) + '.xlsx'
+    global filepath
     filepath ='/tmp/' + filename
 
     # Create an new Excel file and add a worksheet.
@@ -130,22 +140,74 @@ def create_xlsx(items, start_timestamp, end_timestamp):
     global center_align
     center_align = workbook.add_format({'align': 'center'})
 
-    # TODO
-    temperature_sheet = workbook.add_worksheet(u'温度')
-    write_summary(temperature_sheet, u'温度 (℃)', len(items), start_timestamp, end_timestamp)
-    write_data(temperature_sheet, items)
-    workbook.close()
+    return workbook
 
-    # Upload to S3
-    s3 = boto3.resource('s3')
-    s3.Object('xlsx-export', filename).put(Body=open(filepath, 'rb'), ACL='public-read')
+def create_sheet(workbook, sheet_name):
+    sheet = workbook.add_worksheet(sheet_name)
+    return sheet
+
+def request_sensors(device_id)
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    table = dynamodb.Table('devices')
+
+    response = table.query(
+        TableName='devices',
+        ConsistentRead=True,
+        KeyConditionExpression='device_id = :device_id',
+        ExpressionAttributeValues={
+            ':device_id': device_id
+        }
+    )
+    if response['Count'] > 0:
+        sensor_map_list = response['Items'][0]['sensor_list']
+    else:
+    	sensor_map_list = []
+   	return sensor_map_list
 
 
 def export_to_xlsx(event, context):
     print(json.dumps(event))
+    # Parse query parameters
+    # I need device_id, start_timestamp and end_timestamp
+    if(event[queryStringParameters] != '' &&
+        event[queryStringParameters][device_id] != '' &&
+        event[queryStringParameters][start_timestamp] != '' &&
+        event[queryStringParameters][end_timestamp] != '')
+    {
+        sufficient_params = True
+        device_id = event[queryStringParameters][device_id]
+        start_timestamp = event[queryStringParameters][start_timestamp]
+        end_timestamp = event[queryStringParameters][end_timestamp]
+        # Create workbook
+        workbook = create_workbook()
 
-    response = request_data('TEMPERATURE_DHT11_1', 1490135972113, 1490137092113)
-    create_xlsx(response, 1490135972113, 1490137092113)
-    print("Query succeeded:")
-    print(json.dumps(response, indent=4, cls=DecimalEncoder))
-    return response[0]
+        # Request list of sensors 
+        sensor_map_list = request_sensors(device_id)
+        # Request data for each sensor
+        for sensor_map in sensor_list:
+            sensor_id = sensor_map.keys()
+            unit = sensor_map[sensor_id]
+            # Request data for current sensor
+            readings = request_data(sensor_id, start_timestamp, end_timestamp)
+            # Create sheet
+            # Parse unit to get sheet name
+            sheet = create_sheet(workbook, unit.split()[0])
+            # Write summary to that sheet
+            write_summary(sheet, unit, len(readings), start_timestamp, end_timestamp)
+            # Write data to that sheet
+            write_data(sheet, readings)
+
+        workbook.close()
+        download_link = upload_xlsx()
+
+    }
+    else
+    {
+        sufficient_params = False
+    }
+    
+    if(sufficient_params && download_link):
+    	return download_link
+    else:
+    	return 'Invalid parameters or upload failed.'
+
