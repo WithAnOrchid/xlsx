@@ -170,7 +170,16 @@ def request_sensors(device_id):
         sensor_map_list = response['Items'][0]['sensor_list']
     else:
         sensor_map_list = []
-        return sensor_map_list
+    return sensor_map_list
+
+def respond(err, res=None):
+    return {
+        'statusCode': '400' if err else '200',
+        'body': err.message if err else json.dumps(res),
+        'headers': {
+            'Content-Type': 'application/json',
+        },
+    }
 
 
 def export_to_xlsx(event, context):
@@ -178,15 +187,15 @@ def export_to_xlsx(event, context):
     # Parse query parameters
     # I need device_id, start_timestamp and end_timestamp
     sufficient_params = False
-    if (event[queryStringParameters] != '' and
-        event[queryStringParameters][device_id] != '' and
-        event[queryStringParameters][start_timestamp] != '' and
-        event[queryStringParameters][end_timestamp] != ''):
+    if (event['queryStringParameters'] != '' and
+        event['queryStringParameters']['device_id'] != '' and
+        event['queryStringParameters']['start_timestamp'] != '' and
+        event['queryStringParameters']['end_timestamp'] != ''):
         
         sufficient_params = True
-        device_id = event[queryStringParameters][device_id]
-        start_timestamp = event[queryStringParameters][start_timestamp]
-        end_timestamp = event[queryStringParameters][end_timestamp]
+        device_id = event['queryStringParameters']['device_id']
+        start_timestamp = event['queryStringParameters']['start_timestamp']
+        end_timestamp = event['queryStringParameters']['end_timestamp']
         # Create workbook
         workbook = create_workbook()
 
@@ -194,15 +203,15 @@ def export_to_xlsx(event, context):
         sensor_map_list = request_sensors(device_id)
         # Request data for each sensor
         for sensor_map in sensor_map_list:
-            sensor_id = sensor_map.keys()
+            sensor_id = sensor_map.keys()[0]
             unit = sensor_map[sensor_id]
             # Request data for current sensor
-            readings = request_data(sensor_id, start_timestamp, end_timestamp)
+            readings = request_data(sensor_id, int(start_timestamp), int(end_timestamp))
             # Create sheet
             # Parse unit to get sheet name
             sheet = create_sheet(workbook, unit.split()[0])
             # Write summary to that sheet
-            write_summary(sheet, unit, len(readings), start_timestamp, end_timestamp)
+            write_summary(sheet, unit, len(readings), int(start_timestamp), int(end_timestamp))
             # Write data to that sheet
             write_data(sheet, readings)
 
@@ -212,7 +221,20 @@ def export_to_xlsx(event, context):
         
 
     if (sufficient_params):
-        return upload_xlsx()
+        link = upload_xlsx()
+        
+        '''
+        response = {}
+        response['statusCode'] = '200'
+        response['body'] = link
+        response['headers'] = {
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition': 'attachment; filename=' + filepath
+                }
+        response = json.dumps(response)
+        return response
+        '''
+        return respond(None, str(link))
     else:
-        return 'Invalid parameters or upload failed.'
+    	raise respond(ValueError('Unsupported parameters "{}"'.format(operation)))
 
